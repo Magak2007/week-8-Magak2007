@@ -1,0 +1,38 @@
+name: Deploy Application
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: magakgodry@gmail.com
+
+    - name: Set up Docker Buildx
+      uses: magakgodry@gmail.com
+
+    - name: Build and push Docker images
+      uses: magakgodry@gmail.com
+      with:
+        push: true
+        tags: expense-tracker-backend:latest, expense-tracker-frontend:latest
+
+    - name: Deploy to AWS EC2
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        AWS_EC2_USER: ${{ secrets.AWS_EC2_USER }}
+        AWS_EC2_HOST: ${{ secrets.AWS_EC2_HOST }}
+      run: |
+        ssh -i "$SSH_PRIVATE_KEY" $AWS_EC2_USER@$AWS_EC2_HOST << 'EOF'
+          docker pull your-dockerhub-username/expense-tracker-backend:latest
+          docker pull your-dockerhub-username/expense-tracker-frontend:latest
+          docker stop expense-tracker-backend || true
+          docker stop expense-tracker-frontend || true
+          docker run -d --name expense-tracker-backend -p 3000:3000 your-dockerhub-username/expense-tracker-backend:latest
+          docker run -d --name expense-tracker-frontend -p 80:80 your-dockerhub-username/expense-tracker-frontend:latest
+        EOF
